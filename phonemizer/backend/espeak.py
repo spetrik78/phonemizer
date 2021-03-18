@@ -44,6 +44,12 @@ _ESPEAK_FLAGS_RE = re.compile(r'\(.+?\)')
 _ESPEAK_DEFAULT_PATH = None
 
 
+# a global variable being used to overload the default espeak data path installed on the
+# system. The user can choose an alternative espeak data path with the method
+# EspeakBackend.set_espeak_data_path().
+_ESPEAK_DEFAULT_DATA_PATH = None
+
+
 class BaseEspeakBackend(BaseBackend):
     """Abstract espeak backend for the phonemizer
 
@@ -86,6 +92,36 @@ class BaseEspeakBackend(BaseBackend):
         if not espeak:  # pragma: nocover
             espeak = distutils.spawn.find_executable('espeak')
         return espeak
+
+    @staticmethod
+    def set_espeak_data_path(fpath):
+        """Sets the espeak-data path as `fpath`"""
+        global _ESPEAK_DEFAULT_DATA_PATH
+        if not fpath:
+            _ESPEAK_DEFAULT_DATA_PATH = None
+            return
+
+        if not (os.path.isdir(fpath) and os.access(fpath, os.R_OK)):
+            raise ValueError(
+                f'{fpath} is not an existing and readable folder')
+
+        _ESPEAK_DEFAULT_DATA_PATH = os.path.abspath(fpath)
+
+    @staticmethod
+    def espeak_data_path():
+        """Returns the absolute path to the espeak-data directory"""
+        if 'PHONEMIZER_ESPEAK_DATA_PATH' in os.environ:
+            espeak = os.environ['PHONEMIZER_ESPEAK_DATA_PATH']
+            if not (os.path.isdir(espeak) and os.access(espeak, os.R_OK)):
+                raise ValueError(
+                    f'PHONEMIZER_ESPEAK_DATA_PATH={espeak} '
+                    f'is not a readable folder')
+            return "--path=" + os.path.abspath(espeak)
+
+        if _ESPEAK_DEFAULT_DATA_PATH:
+            return "--path=" + _ESPEAK_DEFAULT_DATA_PATH
+
+        return ""
 
     @classmethod
     def is_available(cls):
@@ -236,7 +272,7 @@ class EspeakBackend(BaseEspeakBackend):
 
     def _command(self, fname):
         return (
-            f'{self.espeak_path()} -v{self.language} {self.ipa} '
+            f'{self.espeak_path()} {self.espeak_data_path()} -v{self.language} {self.ipa} '
             f'-q -f {fname} {self.sep}')
 
     def _phonemize_aux(self, text, separator, strip):
