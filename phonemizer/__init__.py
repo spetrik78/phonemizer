@@ -15,7 +15,7 @@
 """Multilingual text to phones converter"""
 
 
-__version__ = '2.2.2'
+__version__ = '2.2.3-alpha'
 
 
 try:  # pragma: nocover
