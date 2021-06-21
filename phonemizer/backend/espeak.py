@@ -189,11 +189,12 @@ class EspeakBackend(BaseEspeakBackend):
         version = self.version()
 
         self.sep = '--sep=_'
-        if version == '1.48.03' or version.split('.')[1] <= '47':
+        if version == '1.48.03' or version>'1.48.03' or version.split('.')[1] <= '47':
             self.sep = ''  # pragma: nocover
 
         self.ipa = '--ipa=3'
-        if self.is_espeak_ng():  # this is espeak-ng
+        if self.is_espeak_ng() or version>'1.48.03':  # this is espeak-ng
+            self.sep = '--sep=_'  # pragma: nocover
             self.ipa = '-x --ipa'
 
         # ensure the lang_switch argument is valid
